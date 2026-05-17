@@ -256,6 +256,14 @@ async def _connect_once() -> None:
         while True:
             await asyncio.sleep(30)
             await client.get_volume()  # lightweight keepalive; raises on disconnect
+            # getCurrentChannel subscription only fires once on some WebOS firmware;
+            # poll explicitly so channel changes are reflected within one keepalive cycle.
+            try:
+                await client.get_current_channel()
+                await client.get_channel_info()
+            except Exception:
+                pass
+            _update_tv(client)
     finally:
         with _lock:
             _connected = False
