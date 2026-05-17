@@ -145,6 +145,8 @@ def _render() -> bytes:
         for k, v in ps_dict.items():
             if isinstance(v, (int, float)):
                 safe_key = "".join(c if c.isalnum() else "_" for c in k).lower().strip("_")
+                if safe_key and safe_key[0].isdigit():
+                    safe_key = "_" + safe_key
                 gauge(f"lgtv_picture_{safe_key}", f"Picture setting: {k}", v)
         info(
             "lgtv_picture_info",
