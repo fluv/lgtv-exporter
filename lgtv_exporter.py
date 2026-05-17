@@ -216,6 +216,7 @@ async def _connect_once() -> None:
         client_key=CLIENT_KEY or None,
         states=STATES,
         ping_interval=None,
+        key_file_path="/tmp/.aiopylgtv.sqlite",
     )
 
     async def on_state(cl: Any) -> None:
@@ -258,7 +259,9 @@ async def _pair() -> None:
     from bscpylgtv import WebOsClient
 
     log.info("pairing with %s — accept the prompt on your TV", TV_IP)
-    client = await WebOsClient.create(TV_IP, client_key=None, ping_interval=None)
+    client = await WebOsClient.create(
+        TV_IP, client_key=None, ping_interval=None, key_file_path="/tmp/.aiopylgtv.sqlite"
+    )
     await client.connect()
     key = getattr(client, "client_key", None)
     await client.disconnect()
