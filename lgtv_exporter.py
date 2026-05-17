@@ -42,6 +42,8 @@ STATES = [
     "muted",
     "volume",
     "inputs",
+    "current_channel",
+    "channel_info",
     "sound_output",
     "picture_settings",
 ]
@@ -126,18 +128,32 @@ def _render() -> bytes:
     # Sound output
     info("lgtv_sound_output_info", "Current audio output device", output=str(tv.get("sound_output") or ""))
 
-    # Active input (from inputs list — find the connected one)
+    # Active input — match by appId first (covers HDMI inputs),
+    # fall back to connected flag, then synthesise for the live TV tuner
+    # which is not represented in the external inputs list.
     inputs = tv.get("inputs")
+    current_app = str(tv.get("current_appId") or "")
     if isinstance(inputs, list):
+        matched = None
         for inp in inputs:
-            if isinstance(inp, dict) and inp.get("connected"):
-                info(
-                    "lgtv_input_info",
-                    "Currently connected input source",
-                    id=str(inp.get("id") or ""),
-                    label=str(inp.get("label") or inp.get("name") or ""),
-                )
+            if isinstance(inp, dict) and inp.get("appId") == current_app:
+                matched = inp
                 break
+        if matched is None:
+            for inp in inputs:
+                if isinstance(inp, dict) and inp.get("connected"):
+                    matched = inp
+                    break
+        if matched:
+            info(
+                "lgtv_input_info",
+                "Currently connected input source",
+                id=str(matched.get("id") or ""),
+                label=str(matched.get("label") or matched.get("name") or ""),
+            )
+        elif current_app == "com.webos.app.livetv":
+            info("lgtv_input_info", "Currently connected input source",
+                 id="livetv", label="Live TV")
 
     # Picture settings — emit all numeric values plus mode info
     ps_dict = tv.get("picture_settings")
@@ -160,15 +176,22 @@ def _render() -> bytes:
             ),
         )
 
-    # Current channel — only populated when on live TV
-    ch = tv.get("current_channel") or tv.get("channel_info")
-    if isinstance(ch, dict) and ch.get("channelName"):
+    # Current channel — only populated when on live TV.
+    # current_channel carries name/number; channel_info carries programme name.
+    ch = tv.get("current_channel") or {}
+    ch_info = tv.get("channel_info") or {}
+    if not isinstance(ch, dict):
+        ch = {}
+    if not isinstance(ch_info, dict):
+        ch_info = {}
+    channel_name = str(ch.get("channelName") or "")
+    if channel_name:
         info(
             "lgtv_channel_info",
             "Current broadcast channel and programme (live TV only)",
-            channel=str(ch.get("channelName") or ""),
+            channel=channel_name,
             number=str(ch.get("channelNumber") or ""),
-            program=str(ch.get("programName") or ""),
+            program=str(ch_info.get("programName") or ch.get("programName") or ""),
         )
 
     # Build info
