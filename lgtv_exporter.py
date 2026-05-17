@@ -261,8 +261,8 @@ async def _connect_once() -> None:
             try:
                 await client.get_current_channel()
                 await client.get_channel_info()
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug("channel poll skipped: %s", e)
             _update_tv(client)
     finally:
         with _lock:
