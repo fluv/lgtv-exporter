@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lgtv-exporter"
+version = "1.0.0"
+description = "Prometheus exporter for LG WebOS TVs via SSAP WebSocket"
+requires-python = ">=3.12"
+license = { text = "MIT-0" }
+dependencies = [
+    "bscpylgtv==0.5.1",
+]
